@@ -110,3 +110,72 @@ def safe_convert(value, convert_func, default=0):
         return convert_func(value)
     except (ValueError, TypeError):
         return default
+    
+def compile_data():
+    """Compile census data for all counties."""
+    current_year = datetime.now().year
+    census_year = 2020  # Base year for ACS 5-year estimates
+    
+    all_data = []
+    zip_codes = generate_zip_ranges()
+    total_counties = sum(len(counties_list) for counties_list in counties.values())
+    processed_counties = 0
+
+    for state_code, county_codes in counties.items():
+        state_data = []
+        for county_code in county_codes:
+            processed_counties += 1
+            print(f"Processing county {processed_counties} of {total_counties}...")
+            
+            data = get_enhanced_population_data(state_code, county_code)
+            if data:
+                try:
+                    header, row = data[0], data[1]
+                    
+                    # Safe conversion of all values
+                    total_population = safe_convert(row[1], int)
+                    population_45_64 = safe_convert(row[2], int)
+                    population_65_plus = safe_convert(row[3], int)
+                    population_45_plus = population_45_64 + population_65_plus
+                    
+                    bachelors_or_higher = safe_convert(row[4], float)
+                    median_income = safe_convert(row[5], float)
+                    employment_rate = safe_convert(row[6], float)
+                    homeownership_rate = safe_convert(row[7], float)
+                    health_insurance_rate = safe_convert(row[8], float)
+                    avg_household_size = safe_convert(row[9], float)
+                    
+                    state_data.append({
+                        "State": row[0].split(", ")[1],
+                        "County": row[0].split(", ")[0],
+                        "Census Year": census_year,
+                        "Data Year": current_year,
+                        "Total Population": total_population,
+                        "Population aged 45+": population_45_plus,
+                        "Population Aged 45-64": population_45_64,
+                        "Population Aged 65+": population_65_plus,
+                        "Percent 45+ Population": round((population_45_plus / total_population * 100), 2) if total_population > 0 else 0,
+                        "Median Household Income": median_income,
+                        "Employment Rate (%)": round(employment_rate, 2),
+                        "Bachelor's Degree or Higher (%)": round(bachelors_or_higher, 2),
+                        "Homeownership Rate (%)": round(homeownership_rate, 2),
+                        "Health Insurance Coverage (%)": round(health_insurance_rate, 2),
+                        "Average Household Size": round(avg_household_size, 2),
+                        "Population Density Score": round(total_population / 1000, 2),
+                        "Zip Codes": zip_codes[state_code][county_code],
+                        "Sources Used": "US Census ACS 5-Year Estimates",
+                        "Data Accuracy": "Yes",
+                        "Last Updated": datetime.now().strftime("%Y-%m-%d"),
+                        "FIPS Code": f"{state_code}{county_code}",
+                    })
+                except Exception as e:
+                    print(f"Error processing data for state {state_code}, county {county_code}: {str(e)}")
+                    continue
+        
+        # Sort counties within each state by population
+        if state_data:
+            state_df = pd.DataFrame(state_data)
+            state_df = state_df.sort_values("Total Population", ascending=False)
+            all_data.extend(state_df.to_dict('records'))
+    
+    return pd.DataFrame(all_data)
