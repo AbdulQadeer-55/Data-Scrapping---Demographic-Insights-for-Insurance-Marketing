@@ -32,7 +32,7 @@ The data is then saved into a neatly organized Excel file, where each county's d
 
 ## **🔧 Requirements**
 
-- Python 3.6+
+- Python 3.10.12
 - `requests` for API calls
 - `pandas` for data manipulation
 - `openpyxl` for exporting data to Excel
