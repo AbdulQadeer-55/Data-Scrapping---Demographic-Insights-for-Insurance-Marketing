@@ -179,3 +179,40 @@ def compile_data():
             all_data.extend(state_df.to_dict('records'))
     
     return pd.DataFrame(all_data)
+
+def main():
+    try:
+        print("Starting Census data collection...")
+        print("This process will take several minutes. Please wait...")
+        
+        data = compile_data()
+        
+        if not data.empty:
+            output_file = "enhanced_state_top_25_counties_census.xlsx"
+            
+            print(f"\nSaving data to {output_file}...")
+            with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+                # Save all data to one sheet
+                data.to_excel(writer, sheet_name="All Counties", index=False)
+                
+                # Create individual sheets for each state
+                for state in data["State"].unique():
+                    state_data = data[data["State"] == state]
+                    state_data.to_excel(writer, sheet_name=state[:31], index=False)
+            
+            print(f"\nSuccessfully saved data to {output_file}")
+            print(f"Total counties processed: {len(data)}")
+            print("\nSummary of data collected:")
+            print(f"Number of states: {len(data['State'].unique())}")
+            print(f"Total population covered: {data['Total Population'].sum():,}")
+            print(f"Average 45+ population percentage: {data['Percent 45+ Population'].mean():.2f}%")
+            
+        else:
+            print("\nNo data was collected. Please check the error messages above.")
+            
+    except Exception as e:
+        print(f"\nAn error occurred: {str(e)}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
