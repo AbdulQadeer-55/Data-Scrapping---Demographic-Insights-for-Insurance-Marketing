@@ -39,3 +39,31 @@ counties = {
         "033", "039", "103", "071", "087"
     ]
 }
+
+def generate_zip_ranges():
+    """Generate approximate ZIP code ranges for each county."""
+    zip_ranges = {
+        "39": {},  # Ohio: 43000-45999
+        "37": {},  # North Carolina: 27000-28999
+        "13": {},  # Georgia: 30000-31999, 39800-39999
+        "48": {},  # Texas: 75000-79999, 88500-88599
+        "12": {},  # Florida: 32000-34999
+        "01": {}   # Alabama: 35000-36999
+    }
+    
+    zip_base = {
+        "39": "43",  # Ohio
+        "37": "27",  # North Carolina
+        "13": "30",  # Georgia
+        "48": "75",  # Texas
+        "12": "32",  # Florida
+        "01": "35"   # Alabama
+    }
+    
+    for state, counties_list in counties.items():
+        for i, county in enumerate(counties_list):
+            start = f"{zip_base[state]}{str(i*2).zfill(3)}"
+            end = f"{zip_base[state]}{str(i*2 + 1).zfill(3)}"
+            zip_ranges[state][county] = f"{start}-{end}"
+    
+    return zip_ranges
