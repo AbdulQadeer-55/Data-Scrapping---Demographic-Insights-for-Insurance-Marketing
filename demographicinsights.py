@@ -67,3 +67,37 @@ def generate_zip_ranges():
             zip_ranges[state][county] = f"{start}-{end}"
     
     return zip_ranges
+
+def get_enhanced_population_data(state_code, county_code, retries=3):
+    """Fetch enhanced population data from Census API with retry mechanism."""
+    variables = [
+        "NAME",
+        "S0101_C01_001E",  # Total population
+        "S0101_C01_021E",  # Population 45-64
+        "S0101_C01_022E",  # Population 65+
+        "S1501_C01_006E",  # Educational attainment: Bachelor's degree or higher
+        "S1901_C01_012E",  # Median household income
+        "S2301_C04_001E",  # Employment rate
+        "S2502_C01_002E",  # Homeownership rate
+        "S2701_C05_001E",  # Health insurance coverage
+        "S1101_C01_002E",  # Average household size
+    ]
+    
+    url = f"https://api.census.gov/data/2020/acs/acs5/subject?get={','.join(variables)}&for=county:{county_code}&in=state:{state_code}&key={API_KEY}"
+    
+    for attempt in range(retries):
+        try:
+            response = requests.get(url, timeout=30)
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 429:  # Rate limit
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            else:
+                print(f"Failed attempt {attempt + 1} for state {state_code}, county {county_code}. Status: {response.status_code}")
+        except Exception as e:
+            print(f"Error on attempt {attempt + 1} for state {state_code}, county {county_code}: {str(e)}")
+            if attempt < retries - 1:
+                time.sleep(2 ** attempt)
+            continue
+    return None
