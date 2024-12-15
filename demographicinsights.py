@@ -101,3 +101,12 @@ def get_enhanced_population_data(state_code, county_code, retries=3):
                 time.sleep(2 ** attempt)
             continue
     return None
+
+def safe_convert(value, convert_func, default=0):
+    """Safely convert values with error handling."""
+    try:
+        if value is None or value == '':
+            return default
+        return convert_func(value)
+    except (ValueError, TypeError):
+        return default
